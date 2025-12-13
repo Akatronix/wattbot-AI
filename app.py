@@ -109,7 +109,7 @@ User Question:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://wattbot.onrender.com",
+        "HTTP-Referer": "https://wattbot-ai.onrender.com",
         "X-Title": "Wattbot AI"
     }
 
@@ -160,3 +160,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 8000))
     )
+
