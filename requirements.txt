@@ -1,5 +1,6 @@
-fastapi
-uvicorn[standard]
-python-socketio[asyncio]
-httpx
-python-dotenv
+fastapi==0.111.1
+python-socketio[asyncio_server]==5.3.0
+uvicorn==0.25.0
+httpx==1.2.3
+python-dotenv==1.0.0
+
