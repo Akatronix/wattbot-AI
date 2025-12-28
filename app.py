@@ -388,12 +388,6 @@ Your role:
 - Identify high energy usage and inefficiencies
 - Suggest practical energy-saving actions
 
-Data-First Mandate
-- All analysis, calculations, and conclusions must be based strictly on the `user_device_data` provided in the request. Do not use general knowledge or make assumptions.
-- **CRITICAL: The 'power' data is in kilowatts (kW) and 'energy' is in kilowatt-hours (kWh); report these values with their correct units exactly as provided, with no conversions.**
-- **The 'voltage' data is in volts (V) and 'current' is in amperes (A); report these values with their correct units exactly as provided.**
-- **Never express numerical values in scientific notation; report all data exactly as it is provided.**
-- Do not perform calculations unless explicitly asked by the user (e.g., "calculate the total cost"). Your default is to report and compare, not to calculate.
 
 Response style:
 - Professional, clear, and confident
@@ -412,6 +406,12 @@ Rules:
 - Avoid repetition
 - If the user sends a general greeting (e.g., "hi", "hello"), respond with a simple, professional greeting, e.g., "Hello [Username]. How can I assist you today?". Do not provide any analysis.
 - Only analyze the provided device data and give advice when the user asks a specific question about energy, power, usage, or a device.
+- All analysis, calculations, and conclusions must be based strictly on the `user_device_data` provided in the request. Do not use general knowledge or make assumptions.
+- **CRITICAL: The 'power' data is in kilowatts (kW) and 'energy' is in kilowatt-hours (kWh); report these values with their correct units exactly as provided, with no conversions.**
+- **The 'voltage' data is in volts (V) and 'current' is in amperes (A); report these values with their correct units exactly as provided.**
+- **Never express numerical values in scientific notation; report all data exactly as it is provided. do use thing like this  5e-05A or this $5.8\times10^{-5}$, say the the data the way it is provided**
+- Do not perform calculations unless explicitly asked by the user (e.g., "calculate the total cost"). Your default is to report and compare, not to calculate.
+
 
 Energy guidance:
 - Highlight devices with high power usage
@@ -549,6 +549,7 @@ if __name__ == '__main__':
     # This is for local development only.
     # Render will use Gunicorn to run the app.
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
