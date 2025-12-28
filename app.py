@@ -7,6 +7,7 @@ import json
 from flask import Flask, request, jsonify
 from google import genai
 from google.genai import types
+from flask_cors import CORS
 
 
 # app.py
@@ -24,6 +25,7 @@ load_dotenv()  # <-- ADD THIS LINE
 # ==============================================================================
 
 app = Flask(__name__)
+CORS(app)
 
 # Load API keys from environment variables for security on Render
 # On Render, you will set GOOGLE_AI_KEY_1, GOOGLE_AI_KEY_2, etc.
@@ -247,3 +249,4 @@ if __name__ == '__main__':
     # This is for local development only.
     # Render will use Gunicorn to run the app.
     app.run(host='0.0.0.0', port=5000, debug=True)
+
