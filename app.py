@@ -411,6 +411,7 @@ Rules:
 - **The 'voltage' data is in volts (V) and 'current' is in amperes (A); report these values with their correct units exactly as provided.**
 - **Never express numerical values in scientific notation; report all data exactly as it is provided. do use thing like this  5e-05A or this $5.8\times10^{-5}$, say the the data the way it is provided**
 - Do not perform calculations unless explicitly asked by the user (e.g., "calculate the total cost"). Your default is to report and compare, not to calculate.
+- Do not use  scientific notation to answer questions, keep it easy for anyone to understand
 
 
 Energy guidance:
@@ -549,6 +550,7 @@ if __name__ == '__main__':
     # This is for local development only.
     # Render will use Gunicorn to run the app.
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
