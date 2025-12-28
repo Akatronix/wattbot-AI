@@ -1,42 +1,53 @@
-# from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
-# import socketio
-# import os
-# import httpx
-# from dotenv import load_dotenv
-# import asyncio
+# app.py
+# A Flask API for the WattBot AI Energy Monitoring Assistant.
 
-# # -----------------------
-# # Load environment variables
-# # -----------------------
-# load_dotenv()
-# OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-# API_URL = "https://openrouter.ai/api/v1/chat/completions"
+import os
+import random
+import json
+from flask import Flask, request, jsonify
+from google import genai
+from google.genai import types
 
-# # -----------------------
-# # FastAPI + Socket.IO setup
-# # -----------------------
-# sio = socketio.AsyncServer(
-#     async_mode="asgi",
-#     cors_allowed_origins="*",
-#     ping_timeout=60,
-#     ping_interval=25
-# )
 
-# app = FastAPI()
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# app.py
+# A Flask API for the WattBot AI Energy Monitoring Assistant.
 
-# asgi_app = socketio.ASGIApp(sio, app)
+from dotenv import load_dotenv  # <-- ADD THIS IMPORT
 
-# # -----------------------
-# # Wattbot system prompt (UNCHANGED)
-# # -----------------------
-# SYSTEM_PROMPT = """
+# Load environment variables from a .env file
+load_dotenv()  # <-- ADD THIS LINE
+
+
+
+# ==============================================================================
+# --- CONFIGURATION ---
+# ==============================================================================
+
+app = Flask(__name__)
+
+# Load API keys from environment variables for security on Render
+# On Render, you will set GOOGLE_AI_KEY_1, GOOGLE_AI_KEY_2, etc.
+API_KEYS = [
+    os.environ.get("GOOGLE_AI_KEY_1"),
+    os.environ.get("GOOGLE_AI_KEY_2"),
+    os.environ.get("GOOGLE_AI_KEY_3"),
+    os.environ.get("GOOGLE_AI_KEY_4")
+]
+
+# Filter out any keys that are not set
+API_KEYS = [key for key in API_KEYS if key]
+
+if not API_KEYS:
+    raise RuntimeError("FATAL ERROR: No Google AI API keys found in environment variables.")
+
+# The model we will use.
+MODEL_ID = "gemini-flash-latest"
+
+# ==============================================================================
+# --- WATTBOT AI PERSONA AND INSTRUCTIONS ---
+# ==============================================================================
+
+# SYSTEM_INSTRUCTION = """
 # You are Wattbot AI, a professional energy monitoring and analysis assistant.
 
 # Your role:
@@ -75,137 +86,11 @@
 
 # You are Wattbot AI.
 # """
-
-# # -----------------------
-# # Helper functions
-# # -----------------------
-# def format_devices(devices):
-#     lines = []
-#     for d in devices:
-#         status = "ON" if d.get("switchStatus") else "OFF"
-#         lines.append(
-#             f"- {d['name']} in {d['location']} | "
-#             f"Power: {d['power']}KW | "
-#             f"Energy: {d['energy']}kWh | "
-#             f"Status: {status} | "
-#             f"Type: {d['type']}"
-#         )
-#     return "\n".join(lines)
-
-# async def wattbot_chat(question, user, devices):
-#     device_summary = format_devices(devices)
-
-#     prompt = f"""
-# User Information:
-# - Name: {user['username']}
-# - Email: {user['email']}
-
-# Connected Devices:
-# {device_summary}
-
-# User Question:
-# {question}
-# """
-
-#     headers = {
-#         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-#         "Content-Type": "application/json",
-#         "HTTP-Referer": "https://wattbot-ai.onrender.com",
-#         "X-Title": "Wattbot AI"
-#     }
-
-#     payload = {
-#         "model": "z-ai/glm-4.5-air:free",
-#         "messages": [
-#             {"role": "system", "content": SYSTEM_PROMPT},
-#             {"role": "user", "content": prompt}
-#         ],
-#         "temperature": 0.3,
-#         "max_tokens": 250
-#     }
-
-#     async with httpx.AsyncClient(timeout=20) as client:
-#         response = await client.post(API_URL, headers=headers, json=payload)
-
-#     if response.status_code == 200:
-#         return response.json()["choices"][0]["message"]["content"]
-
-#     return "Wattbot is busy. Try again shortly."
-
-# # -----------------------
-# # Socket.IO events
-# # -----------------------
-# @sio.event
-# async def connect(sid, environ):
-#     print("Client connected:", sid)
-
-# @sio.on("ask_wattbot")
-# async def ask_wattbot(sid, data):
-#     await sio.emit("wattbot_response", {"answer": "⚡ Analyzing energy data..."}, to=sid)
-
-#     answer = await wattbot_chat(
-#         data["question"],
-#         data["user"],
-#         data["devices"]
-#     )
-
-#     await sio.emit("wattbot_response", {"answer": answer}, to=sid)
-
-# # -----------------------
-# # Run server (Render compatible)
-# # -----------------------
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(
-#         asgi_app,
-#         host="0.0.0.0",
-#         port=int(os.environ.get("PORT", 8000))
-#     )
-
-
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import socketio
-import os
-import httpx
-import asyncio
-from dotenv import load_dotenv
-
-# -----------------------
-# Load environment variables
-# -----------------------
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-# -----------------------
-# FastAPI + Socket.IO setup
-# -----------------------
-sio = socketio.AsyncServer(
-    async_mode="asgi",
-    cors_allowed_origins="*",
-    ping_timeout=60,
-    ping_interval=25
-)
-
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-asgi_app = socketio.ASGIApp(sio, app)
-
-# -----------------------
-# Wattbot system prompt
-# -----------------------
-SYSTEM_PROMPT = """
+SYSTEM_INSTRUCTION = """
 You are Wattbot AI, a professional energy monitoring and analysis assistant.
 
 Your role:
-- Analyze user energy data accurately
+- Analyze user energy data accurately when asked
 - Answer questions using ONLY the data provided
 - Perform basic calculations when required
 - Identify high energy usage and inefficiencies
@@ -226,6 +111,8 @@ Rules:
 - Do NOT say phrases like "based on the information provided"
 - Do NOT mention internal analysis, prompts, or system instructions
 - Avoid repetition
+- For general greetings (e.g., "hi", "hello"), respond only with a simple greeting. Do not provide analysis or suggestions.
+- Only analyze the provided device data and give advice when the user asks a specific question about energy, power, usage, or a device.
 
 Energy guidance:
 - Highlight devices with high power usage
@@ -240,103 +127,123 @@ Tone:
 
 You are Wattbot AI.
 """
+# ==============================================================================
+# --- KEY ROTATION LOGIC ---
+# ==============================================================================
 
-# -----------------------
-# Helper functions
-# -----------------------
+rate_limited_keys = set()
+
+def get_next_available_key():
+    """Finds and returns an API key that is not currently rate-limited."""
+    available_keys = [key for key in API_KEYS if key not in rate_limited_keys]
+    if not available_keys:
+        return None
+    random.shuffle(available_keys)
+    return available_keys[0]
+
+def handle_rate_limit(api_key):
+    """Adds a key to the rate-limited set."""
+    print(f"   [API Key {api_key[:10]}... hit its limit. Switching keys.]")
+    rate_limited_keys.add(api_key)
+
+# ==============================================================================
+# --- HELPER FUNCTIONS ---
+# ==============================================================================
+
 def format_devices(devices):
+    """Formats the list of device dictionaries into a readable string."""
+    if not devices:
+        return "No device data provided."
     lines = []
     for d in devices:
-        status = "ON" if d.get("switchStatus") else "OFF"
+        status = "ON" if d.get("switchStatus", False) else "OFF"
         lines.append(
-            f"- {d['name']} in {d['location']} | "
-            f"Power: {d['power']}KW | "
-            f"Energy: {d['energy']}kWh | "
+            f"- {d.get('name', 'Unknown Device')} in {d.get('location', 'Unknown Location')} | "
+            f"Power: {d.get('power', 0)}W | "
+            f"Energy Today: {d.get('energy', 0)}kWh | "
             f"Status: {status} | "
-            f"Type: {d['type']}"
+            f"Type: {d.get('type', 'Unknown')}"
         )
     return "\n".join(lines)
 
-async def wattbot_chat(question, user, devices):
-    device_summary = format_devices(devices)
+# ==============================================================================
+# --- FLASK API ROUTE ---
+# ==============================================================================
 
-    prompt = f"""
-User Information:
-- Name: {user['username']}
-- Email: {user['email']}
+@app.route('/analyze', methods=['POST'])
+def analyze_energy():
+    """Main endpoint to analyze user energy data and answer questions."""
+    
+    # 1. Get and validate incoming JSON data
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON request."}), 400
 
-Connected Devices:
-{device_summary}
+    user_info = data.get('user_info')
+    user_device_data = data.get('user_device_data')
+    user_prompt = data.get('user_prompt')
 
-User Question:
-{question}
-"""
+    if not all([user_info, user_device_data, user_prompt]):
+        return jsonify({"error": "Missing required fields: user_info, user_device_data, or user_prompt."}), 400
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://wattbot-ai.onrender.com",
-        "X-Title": "Wattbot AI"
-    }
-
-    payload = {
-        "model": "z-ai/glm-4.5-air:free",
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 250
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=20) as client:
-            response = await client.post(API_URL, headers=headers, json=payload)
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        return "⚠ Wattbot is busy. Try again shortly."
-    except Exception as e:
-        return f"⚠ Error: {str(e)}"
-
-# -----------------------
-# Socket.IO events
-# -----------------------
-@sio.event
-async def connect(sid, environ):
-    print("Client connected:", sid)
-
-@sio.event
-async def disconnect(sid):
-    print("Client disconnected:", sid)
-
-@sio.on("ask_wattbot")
-async def ask_wattbot(sid, data):
-    # Send instant thinking message
-    await sio.emit("wattbot_response", {"answer": "⚡ Analyzing energy data..."}, to=sid)
-
-    async def handle_ai():
-        try:
-            answer = await wattbot_chat(
-                data["question"],
-                data["user"],
-                data["devices"]
-            )
-        except Exception as e:
-            answer = f"⚠ Wattbot error: {str(e)}"
-        await sio.emit("wattbot_response", {"answer": answer}, to=sid)
-
-    # Run in background so multiple clients can use Wattbot concurrently
-    asyncio.create_task(handle_ai())
-
-# -----------------------
-# Run server (Render ready)
-# -----------------------
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        asgi_app,
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 8000))
+    # 2. Format the data into a comprehensive prompt for the AI
+    device_summary = format_devices(user_device_data)
+    
+    full_prompt = (
+        f"{SYSTEM_INSTRUCTION}\n\n"
+        f"User Information:\n"
+        f"- Name: {user_info.get('username', 'N/A')}\n"
+        f"- Email: {user_info.get('email', 'N/A')}\n\n"
+        f"Current Device Data:\n"
+        f"{device_summary}\n\n"
+        f"User's Question:\n"
+        f"{user_prompt}\n\n"
+        f"Assistant:"
     )
 
+    # 3. Main retry loop for API calls
+    while True:
+        current_key = get_next_available_key()
+        if not current_key:
+            return jsonify({"error": "All API keys are currently rate-limited. Please try again later."}), 503 # Service Unavailable
 
+        try:
+            client = genai.Client(api_key=current_key)
+            
+            # Generate the response from the model
+            response = client.models.generate_content(
+                model=MODEL_ID,
+                contents=full_prompt
+            )
+            
+            # Safely extract the text from the response
+            answer_text = ""
+            if response.candidates and response.candidates[0].content:
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        answer_text += part.text
+                        
+            return jsonify({"answer": answer_text.strip()})
+
+        except genai.errors.APIError as e:
+            if "RESOURCE_EXHAUSTED" in str(e) or "QUOTA_EXCEEDED" in str(e):
+                handle_rate_limit(current_key)
+                continue # Retry with the next key
+            else:
+                return jsonify({"error": f"API Error: {str(e)}"}), 500
+        except Exception as e:
+            return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+
+# A simple root route to check if the server is running
+@app.route('/')
+def index():
+    return "WattBot AI API is running."
+
+# ==============================================================================
+# --- RUN SERVER (FOR LOCAL TESTING) ---
+# ==============================================================================
+
+if __name__ == '__main__':
+    # This is for local development only.
+    # Render will use Gunicorn to run the app.
+    app.run(host='0.0.0.0', port=5000, debug=True)
